@@ -6,27 +6,24 @@ class GameViewController: UIViewController {
 
     var height = UIScreen.mainScreen().bounds.size.height,
         width = UIScreen.mainScreen().bounds.size.width,
-    
-        shapeSet: [(type: String, color: UIColor, pos: CGPoint, img: UIImageView)] = [],
-        currentShape: (type: String, color: UIColor, pos: CGPoint, img: UIImageView)? = nil,
+
+        shapeSet: [(type: String, color: UIColor, pos: CGPoint, imgView: UIImageView)] = [],
+        currentShape: (type: String, color: UIColor, pos: CGPoint, imgView: UIImageView)? = nil,
         colorText: (src: String, aspectRatio: CGFloat)? = nil,
         shapeText: (src: String, aspectRatio: CGFloat)? = nil,
         currentText: (src: String, aspectRatio: CGFloat, size: CGPoint, pos: CGPoint)? = nil,
     
         startPos = CGPointMake(0,0),
-        endPos = CGPointMake(0,0)
+        endPos = CGPointMake(0,0),
+    
+        gameFlag = true
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setShapes()
-        var randShape = Int(arc4random_uniform(4))
-        let image = UIImage(named: shapeSet[randShape].type)
-        let imageView = UIImageView(image: image)
-        currentShape = (type: shapeSet[randShape].type,
-                        color: shapeSet[Int(arc4random_uniform(4))].color,
-                        pos: CGPointMake(width/2 - 50, height/2 - 50),
-                        imgView: imageView)
+        newShape()
+        
         setText()
         if (Int(arc4random_uniform(2)) == 1) {
             currentText = (src: colorText!.src, aspectRatio: colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
@@ -34,7 +31,7 @@ class GameViewController: UIViewController {
             currentText = (src: shapeText!.src, aspectRatio: shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
         }
         currentText!.size = CGPointMake(currentText!.aspectRatio * 80, 80)
-        currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, -15)
+        currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, -10)
         render()
     }
 
@@ -55,10 +52,34 @@ class GameViewController: UIViewController {
                 rand = Int(arc4random_uniform(6))
             }
             colorSet.append(rand)
-            let image = UIImage(named: name)
-            let imageView = UIImageView(image: image)
+            let img = UIImage(named: name)
+            let imageView = UIImageView(image: img)
             shapeSet.append((type: name, color: colors[rand], pos: positions[index], imgView: imageView))
         }
+    }
+    
+    func newShape() {
+        let randShape = Int(arc4random_uniform(4))
+        let image = UIImage(named: shapeSet[randShape].type)
+        let imageView = UIImageView(image: image)
+        currentShape = (type: shapeSet[randShape].type,
+                        color: shapeSet[Int(arc4random_uniform(4))].color,
+                        pos: CGPointMake(width/2 - 50, height/2 - 50),
+                        imgView: imageView)
+    }
+    
+    func newText() {
+        // 1/4 chance that it switches
+        if (Int(arc4random_uniform(4)) == 0) {
+            if (currentText!.src == "color.png") {
+                currentText = (src: shapeText!.src, aspectRatio: shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
+            } else {
+                currentText = (src: colorText!.src, aspectRatio: colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
+            }
+            currentText!.size = CGPointMake(currentText!.aspectRatio * 80, 80)
+            currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, -10)
+        }
+        render()
     }
     
     func setText() {
@@ -73,9 +94,7 @@ class GameViewController: UIViewController {
         colorText = (src: "color.png", aspectRatio: colorWidth/colorHeight)
     }
     
-    func addTemplateImage(x: CGFloat, y: CGFloat, color: UIColor, image: UIImage) {
-        let imageView = UIImageView(image: image)
-        
+    func addTemplateImage(x: CGFloat, y: CGFloat, color: UIColor, imageView: UIImageView) {
         imageView.image? = (imageView.image?.imageWithRenderingMode(.AlwaysTemplate))!
         imageView.tintColor = color
         
@@ -93,11 +112,12 @@ class GameViewController: UIViewController {
 
     
     func render() {
+        view.subviews.forEach({ $0.removeFromSuperview() })
         for shape in shapeSet {
-            addTemplateImage(shape.pos.x, y: shape.pos.y, color: shape.color, image: shape.img)
+            addTemplateImage(shape.pos.x, y: shape.pos.y, color: shape.color, imageView: shape.imgView)
         }
         addImage(currentText!.src, x: currentText!.pos.x, y: currentText!.pos.y, width: currentText!.size.x, height: currentText!.size.y)
-        addTemplateImage(currentShape!.pos.x, y: currentShape!.pos.y, color: currentShape!.color, image: currentShape!.img)
+        addTemplateImage(currentShape!.pos.x, y: currentShape!.pos.y, color: currentShape!.color, imageView: currentShape!.imgView)
     }
     
     
@@ -127,21 +147,34 @@ class GameViewController: UIViewController {
         if let touch = touches.first {
             endPos = touch.locationInView(self.view)
             currentShape!.pos = endPos
-            if (currentText!.src == "shape.png") {
-                for shape in shapeSet {
-                    if (shape.type == currentShape!.type && CGRectIntersectsRect(currentShape!.img.frame, shape.img.frame)) {
-                        print("correct")
-                    }
-                }
-            } else {
-                
-            }
-            view.subviews.forEach({ $0.removeFromSuperview() })
             render()
         }
     }
     
     override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
+        if (currentText!.src == "shape.png") {
+            for shape in shapeSet {
+                if (shape.type == currentShape!.type && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
+                    print("correct")
+                    //set gameflag to false
+                    gameFlag = false
+                }
+            }
+        } else {
+            for shape in shapeSet {
+                if (shape.color == currentShape!.color && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
+                    print("correct")
+                    //set gameflag to false
+                    gameFlag = false
+                }
+            }
+        }
+        if (!gameFlag) {
+            newShape()
+            gameFlag = true
+            newText()
+            render()
+        }
         //do something with startPos and endPos
     }
     
