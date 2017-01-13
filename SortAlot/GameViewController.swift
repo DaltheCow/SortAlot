@@ -16,7 +16,12 @@ class GameViewController: UIViewController {
         startPos = CGPointMake(0,0),
         endPos = CGPointMake(0,0),
     
-        gameFlag = true
+        gameFlag = true,
+        date = NSDate().timeIntervalSince1970,
+        milliseconds: Double = 0,
+        difference: Double = 0, //gets larger whenever millisecond counter is paused
+        pauseFlag = false,
+        updateArray: [(type: String, duration: Double, beganAt: Double)] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -140,7 +145,6 @@ class GameViewController: UIViewController {
         if let touch = touches.first {
             startPos = touch.locationInView(self.view)
         }
-
     }
     
     override func touchesMoved(touches: Set<UITouch>, withEvent event: UIEvent?) {
@@ -155,7 +159,6 @@ class GameViewController: UIViewController {
         if (currentText!.src == "shape.png") {
             for shape in shapeSet {
                 if (shape.type == currentShape!.type && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
-                    print("correct")
                     //set gameflag to false
                     gameFlag = false
                 }
@@ -163,7 +166,6 @@ class GameViewController: UIViewController {
         } else {
             for shape in shapeSet {
                 if (shape.color == currentShape!.color && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
-                    print("correct")
                     //set gameflag to false
                     gameFlag = false
                 }
@@ -178,9 +180,26 @@ class GameViewController: UIViewController {
         //do something with startPos and endPos
     }
     
+    override func awakeFromNib() {
+        NSTimer.scheduledTimerWithTimeInterval(
+            0.001,
+            target: self,
+            selector: #selector(update),
+            userInfo: nil,
+            repeats: true)
+    }
     
+    func update() {
+        //array of things to be checked, once those things go over the time they should be displayed they are deleted from the array
+        if (!pauseFlag) {
+            milliseconds = (NSDate().timeIntervalSince1970 - self.date - difference / 1000) * 1000
+        }
+        else {
+            difference = (NSDate().timeIntervalSince1970 - self.date - milliseconds / 1000) * 1000
+        }
+        //have it render every 25 ms (keep track of time since last render)
+    }
     
-    //function adds each image in at its position
 
     override func prefersStatusBarHidden() -> Bool {
         return true
