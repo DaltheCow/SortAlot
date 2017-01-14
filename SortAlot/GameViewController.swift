@@ -21,7 +21,7 @@ class GameViewController: UIViewController {
         milliseconds: Double = 0,
         difference: Double = 0, //gets larger whenever millisecond counter is paused
         pauseFlag = false,
-        updateArray: [(type: String, duration: Double, beganAt: Double)] = []
+        updateArray: [(type: String, duration: Double, beganAt: Double, pos: CGPoint, size: CGPoint, needsPos: Bool)] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -114,10 +114,30 @@ class GameViewController: UIViewController {
         imageView.frame = CGRect(x: x, y: y, width: width, height: height)
         view.addSubview(imageView)
     }
+    
+    func addBackgroundImage(name: String) {
+        let image = UIImage(named: name),
+        imageView = UIImageView(image:image!)
+        view.addSubview(imageView)
+    }
 
     
     func render() {
         view.subviews.forEach({ $0.removeFromSuperview() })
+        addBackgroundImage("SortAlotBackgroundBase.png")
+        if (!pauseFlag) {
+            for (index, el) in updateArray.enumerate() {
+                if (el.beganAt + el.duration <= milliseconds) {
+                    updateArray.removeAtIndex(index)
+                } else {
+                    if (el.needsPos) {
+                    
+                    } else {
+                        addBackgroundImage(el.type)
+                    }
+                }
+            }
+        }
         for shape in shapeSet {
             addTemplateImage(shape.pos.x, y: shape.pos.y, color: shape.color, imageView: shape.imgView)
         }
@@ -159,23 +179,29 @@ class GameViewController: UIViewController {
         if (currentText!.src == "shape.png") {
             for shape in shapeSet {
                 if (shape.type == currentShape!.type && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
-                    //set gameflag to false
                     gameFlag = false
                 }
             }
         } else {
             for shape in shapeSet {
                 if (shape.color == currentShape!.color && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
-                    //set gameflag to false
                     gameFlag = false
                 }
             }
         }
+        
         if (!gameFlag) {
             newShape()
             gameFlag = true
             newText()
-            render()
+            updateArray.append((type: "SortAlotBackgroundGreen1.png", duration: 200, beganAt: milliseconds, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
+            //render()
+        } else {
+            for shape in shapeSet {
+                if (CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
+                    updateArray.append((type: "SortAlotBackgroundRed1.png", duration: 200, beganAt: milliseconds, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
+                }
+            }
         }
         //do something with startPos and endPos
     }
@@ -191,14 +217,18 @@ class GameViewController: UIViewController {
     
     func update() {
         //array of things to be checked, once those things go over the time they should be displayed they are deleted from the array
+        //push things into array and they will be displayed until they are over time
+        //some things need a position and a size for when they are drawn
         if (!pauseFlag) {
             milliseconds = (NSDate().timeIntervalSince1970 - self.date - difference / 1000) * 1000
         }
         else {
             difference = (NSDate().timeIntervalSince1970 - self.date - milliseconds / 1000) * 1000
         }
+        render()
         //have it render every 25 ms (keep track of time since last render)
     }
+    
     
 
     override func prefersStatusBarHidden() -> Bool {
