@@ -1,14 +1,11 @@
 
 import UIKit
-import SpriteKit
 
 class GameViewController: UIViewController {
 
     var height = UIScreen.mainScreen().bounds.size.height,
         width = UIScreen.mainScreen().bounds.size.width,
-
-        shapeSet: [(type: String, color: UIColor, pos: CGPoint, imgView: UIImageView)] = [],
-        currentShape: (type: String, color: UIColor, pos: CGPoint, imgView: UIImageView)? = nil,
+    
         colorText: (src: String, aspectRatio: CGFloat)? = nil,
         shapeText: (src: String, aspectRatio: CGFloat)? = nil,
         currentText: (src: String, aspectRatio: CGFloat, size: CGPoint, pos: CGPoint)? = nil,
@@ -17,72 +14,41 @@ class GameViewController: UIViewController {
         endPos = CGPointMake(0,0),
     
         gameFlag = true,
+    
         date = NSDate().timeIntervalSince1970,
         milliseconds: Double = 0,
         difference: Double = 0, //gets larger whenever millisecond counter is paused
         pauseFlag = false,
-        updateArray: [(type: String, duration: Double, beganAt: Double, pos: CGPoint, size: CGPoint, needsPos: Bool)] = []
+        renderTimer: Double = 25,
+        updateArray: [(type: UIImageView, duration: Double, beginAt: Double, pos: CGPoint, size: CGPoint, needsPos: Bool)] = [],
+        backgroundImg: [UIImageView] = [],
+        backgroundImgIndex = 0,
+        theShapes: Shapes?,
+        theGamePanel: GamePanel?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        setShapes()
-        newShape()
-        
-        setText()
-        if (Int(arc4random_uniform(2)) == 1) {
-            currentText = (src: colorText!.src, aspectRatio: colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
-        } else {
-            currentText = (src: shapeText!.src, aspectRatio: shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
-        }
-        currentText!.size = CGPointMake(currentText!.aspectRatio * 80, 80)
-        currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, -10)
-        render()
-    }
+        theShapes = Shapes(height: self.height, width: self.width)
+        theShapes!.setShapes()
+        theShapes!.newShape()
+        theGamePanel = GamePanel(height: self.height, width: self.width)
+        theGamePanel!.setPanelPosition(view)
 
-    func setShapes() {
-        //only use these 4 shapes
-        let shapes = ["circle.png", "square.png", "triangle.png", "diamond.png"],
-        //the 4 corners of the screen
-            positions = [CGPointMake(0,0), CGPointMake(0, height - 100), CGPointMake(width - 100, 0), CGPointMake(width - 100, height - 100)],
-        //add more colors later
-            colors = [UIColor.blueColor(), UIColor.greenColor(), UIColor.redColor(), UIColor.blackColor(), UIColor.yellowColor(), UIColor.orangeColor()]
-        var colorSet: [Int] = []
-        
-        //shapeset
-        var rand: Int = 0
-        for (index, name) in shapes.enumerate() {
-            rand = Int(arc4random_uniform(6))
-            while(some(equiv, array: colorSet, a: rand)) {
-                rand = Int(arc4random_uniform(6))
-            }
-            colorSet.append(rand)
-            let img = UIImage(named: name)
-            let imageView = UIImageView(image: img)
-            shapeSet.append((type: name, color: colors[rand], pos: positions[index], imgView: imageView))
-        }
-    }
-    
-    func newShape() {
-        let randShape = Int(arc4random_uniform(4))
-        let image = UIImage(named: shapeSet[randShape].type)
-        let imageView = UIImageView(image: image)
-        currentShape = (type: shapeSet[randShape].type,
-                        color: shapeSet[Int(arc4random_uniform(4))].color,
-                        pos: CGPointMake(width/2 - 50, height/2 - 50),
-                        imgView: imageView)
+        setText()
     }
     
     func newText() {
         // 1/4 chance that it switches
         if (Int(arc4random_uniform(4)) == 0) {
             if (currentText!.src == "color.png") {
+                backgroundImgIndex = 1
                 currentText = (src: shapeText!.src, aspectRatio: shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
             } else {
+                backgroundImgIndex = 0
                 currentText = (src: colorText!.src, aspectRatio: colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
             }
-            currentText!.size = CGPointMake(currentText!.aspectRatio * 80, 80)
-            currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, -10)
+            currentText!.size = CGPointMake(currentText!.aspectRatio * height * 1/10, height * 1/10)
+            currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, 10)
         }
         render()
     }
@@ -97,52 +63,84 @@ class GameViewController: UIViewController {
             colorHeight = cText!.size.height,
             colorWidth = cText!.size.width
         colorText = (src: "color.png", aspectRatio: colorWidth/colorHeight)
+        
+        setBackground()
+        
+        if (Int(arc4random_uniform(2)) == 1) {
+            backgroundImgIndex = 0
+            currentText = (src: colorText!.src, aspectRatio: colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
+        } else {
+            backgroundImgIndex = 1
+            currentText = (src: shapeText!.src, aspectRatio: shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
+        }
+        currentText!.size = CGPointMake(currentText!.aspectRatio * height * 1/10, height * 1/10)
+        currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, 10)
+    }
+    
+    func setBackground() {
+        let bckgrndImgArray = ["SortAlotBackgroundBase.png", "SortAlotBackgroundBaseReverse.png", "SortAlotBackgroundGreen1.png", "SortAlotBackgroundRed1.png"]
+        backgroundImg = bckgrndImgArray.map{setImageViews($0)}
+    }
+    
+    func setImageViews(src: String) -> UIImageView {
+        let image = UIImage(named: src),
+        imageView = UIImageView(image: image)
+        let imgAR = image!.size.width / image!.size.height
+        var imgWidth = self.width,
+        imgHeight = self.width / imgAR
+        if (imgHeight < self.height) {
+            imgHeight = self.height
+            imgWidth = self.height * imgAR
+        }
+        imageView.frame = CGRect(x: 0, y: 0, width: 1.75 * imgWidth, height: 1.75 * imgHeight)
+        return imageView
     }
     
     func addTemplateImage(x: CGFloat, y: CGFloat, color: UIColor, imageView: UIImageView) {
-        imageView.image? = (imageView.image?.imageWithRenderingMode(.AlwaysTemplate))!
-        imageView.tintColor = color
+        //image and imageView are not initialized in here because imageView is needed to check for collisions
         
         //all shapes are displayed as 100 by 100, change so that it is percentage of screen size
-        imageView.frame = CGRect(x: x, y: y, width: 100, height: 100)
+        imageView.frame = CGRect(x: x, y: y, width: 3/10 * height, height: 3/10 * height)
         view.addSubview(imageView)
     }
     
+    //change
     func addImage(name: String, x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat) {
         let image = UIImage(named: name),
             imageView = UIImageView(image: image!)
         imageView.frame = CGRect(x: x, y: y, width: width, height: height)
         view.addSubview(imageView)
     }
-    
-    func addBackgroundImage(name: String) {
-        let image = UIImage(named: name),
-        imageView = UIImageView(image:image!)
+    //difference between adding template and background is template images are the shapes that have a changing position and background images never change position
+    func addBackgroundImage(imageView: UIImageView) {
         view.addSubview(imageView)
     }
 
-    
     func render() {
+        //try to find lighter way to display the view so the NSTimer can run more often
+        var indexes: [Int] = []
         view.subviews.forEach({ $0.removeFromSuperview() })
-        addBackgroundImage("SortAlotBackgroundBase.png")
-        if (!pauseFlag) {
-            for (index, el) in updateArray.enumerate() {
-                if (el.beganAt + el.duration <= milliseconds) {
-                    updateArray.removeAtIndex(index)
+        addBackgroundImage(backgroundImg[backgroundImgIndex])//background image is too small for ipad pro
+        
+        for (index, el) in updateArray.enumerate() {
+            if (el.beginAt + el.duration <= milliseconds) {
+                indexes.append(index)
+            } else if (el.beginAt <= milliseconds) {
+                if (el.needsPos) {
                 } else {
-                    if (el.needsPos) {
-                    
-                    } else {
-                        addBackgroundImage(el.type)
-                    }
+                    addBackgroundImage(el.type)
                 }
             }
         }
-        for shape in shapeSet {
+        for index in indexes.reverse() {
+            updateArray.removeAtIndex(index)
+        }
+        for shape in theShapes!.shapeSet {
             addTemplateImage(shape.pos.x, y: shape.pos.y, color: shape.color, imageView: shape.imgView)
         }
+        theGamePanel!.addPanel(view)
         addImage(currentText!.src, x: currentText!.pos.x, y: currentText!.pos.y, width: currentText!.size.x, height: currentText!.size.y)
-        addTemplateImage(currentShape!.pos.x, y: currentShape!.pos.y, color: currentShape!.color, imageView: currentShape!.imgView)
+        addTemplateImage(theShapes!.currentShape!.pos.x, y: theShapes!.currentShape!.pos.y, color: theShapes!.currentShape!.color, imageView: theShapes!.currentShape!.imgView)
     }
     
     
@@ -170,36 +168,38 @@ class GameViewController: UIViewController {
     override func touchesMoved(touches: Set<UITouch>, withEvent event: UIEvent?) {
         if let touch = touches.first {
             endPos = touch.locationInView(self.view)
-            currentShape!.pos = endPos
-            render()
+            theShapes!.currentShape!.pos = CGPointMake(endPos.x - 3/10 * height/2, endPos.y - 3/10 * height/2)
         }
     }
     
     override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
         if (currentText!.src == "shape.png") {
-            for shape in shapeSet {
-                if (shape.type == currentShape!.type && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
+            for shape in theShapes!.shapeSet {
+                if (shape.type == theShapes!.currentShape!.type && CGRectIntersectsRect(theShapes!.currentShape!.imgView.frame, shape.imgView.frame)) {
                     gameFlag = false
                 }
             }
         } else {
-            for shape in shapeSet {
-                if (shape.color == currentShape!.color && CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
+            for shape in theShapes!.shapeSet {
+                if (shape.color == theShapes!.currentShape!.color && CGRectIntersectsRect(theShapes!.currentShape!.imgView.frame, shape.imgView.frame)) {
                     gameFlag = false
                 }
             }
         }
         
         if (!gameFlag) {
-            newShape()
+            theShapes!.newShape()
             gameFlag = true
             newText()
-            updateArray.append((type: "SortAlotBackgroundGreen1.png", duration: 200, beganAt: milliseconds, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
-            //render()
+            updateArray.append((type: backgroundImg[2], duration: 150, beginAt: milliseconds, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
         } else {
-            for shape in shapeSet {
-                if (CGRectIntersectsRect(currentShape!.imgView.frame, shape.imgView.frame)) {
-                    updateArray.append((type: "SortAlotBackgroundRed1.png", duration: 200, beganAt: milliseconds, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
+            for shape in theShapes!.shapeSet {
+                if (CGRectIntersectsRect(theShapes!.currentShape!.imgView.frame, shape.imgView.frame)) {
+                    updateArray.append((type: backgroundImg[3], duration: 200, beginAt: milliseconds, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
+                    updateArray.append((type: backgroundImg[3], duration: 200, beginAt: milliseconds + 300, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
+                    updateArray.append((type: backgroundImg[3], duration: 200, beginAt: milliseconds + 600, pos: CGPointMake(0,0), size: CGPointMake(0,0), needsPos: false))
+                    theShapes!.newShape()
+                    newText()
                 }
             }
         }
@@ -214,19 +214,26 @@ class GameViewController: UIViewController {
             userInfo: nil,
             repeats: true)
     }
-    
+    //var last: Double = 0,
+      //  lastdate: Double = 0
     func update() {
-        //array of things to be checked, once those things go over the time they should be displayed they are deleted from the array
-        //push things into array and they will be displayed until they are over time
-        //some things need a position and a size for when they are drawn
+        //3-4 milliseconds to run the code
+        let now = NSDate().timeIntervalSince1970
+        //print((now-lastdate) * 1000)
+        
         if (!pauseFlag) {
-            milliseconds = (NSDate().timeIntervalSince1970 - self.date - difference / 1000) * 1000
+            milliseconds = (now - self.date - difference / 1000) * 1000
+            if (milliseconds > renderTimer) {
+                render()
+                //print(milliseconds - last)
+                //last = milliseconds
+                renderTimer = milliseconds + 25
+            }
         }
         else {
-            difference = (NSDate().timeIntervalSince1970 - self.date - milliseconds / 1000) * 1000
+            difference = (now - self.date - milliseconds / 1000) * 1000
         }
-        render()
-        //have it render every 25 ms (keep track of time since last render)
+        //lastdate = NSDate().timeIntervalSince1970
     }
     
     
