@@ -6,10 +6,6 @@ class GameViewController: UIViewController {
     var height = UIScreen.mainScreen().bounds.size.height,
         width = UIScreen.mainScreen().bounds.size.width,
     
-        colorText: (src: String, aspectRatio: CGFloat)? = nil,
-        shapeText: (src: String, aspectRatio: CGFloat)? = nil,
-        currentText: (src: String, aspectRatio: CGFloat, size: CGPoint, pos: CGPoint)? = nil,
-    
         startPos = CGPointMake(0,0),
         endPos = CGPointMake(0,0),
     
@@ -33,53 +29,38 @@ class GameViewController: UIViewController {
         theShapes!.newShape()
         theGamePanel = GamePanel(height: self.height, width: self.width)
         theGamePanel!.setPanelPosition(view)
-
-        setText()
+        
+        theGamePanel!.setText()
+        setBackground()
+        //set background
     }
     
     func newText() {
         // 1/4 chance that it switches
         if (Int(arc4random_uniform(4)) == 0) {
-            if (currentText!.src == "color.png") {
+            if (theGamePanel!.currentText!.src == "color.png") {
                 backgroundImgIndex = 1
-                currentText = (src: shapeText!.src, aspectRatio: shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
+                theGamePanel!.currentText = (src: theGamePanel!.shapeText!.src, aspectRatio: theGamePanel!.shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
             } else {
                 backgroundImgIndex = 0
-                currentText = (src: colorText!.src, aspectRatio: colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
+                theGamePanel!.currentText = (src: theGamePanel!.colorText!.src, aspectRatio: theGamePanel!.colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
             }
-            currentText!.size = CGPointMake(currentText!.aspectRatio * height * 1/10, height * 1/10)
-            currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, 10)
+            
+            theGamePanel!.currentText!.size = CGPointMake(theGamePanel!.currentText!.aspectRatio * height * 1/10, height * 1/10)
+            theGamePanel!.currentText!.pos = CGPointMake(width/2 - theGamePanel!.currentText!.size.x/2 - 3, 45 - 3)
         }
         render()
     }
     
-    func setText() {
-        let sText = UIImage(named: "shape.png"),
-            shapeHeight = sText!.size.height,
-            shapeWidth = sText!.size.width
-        shapeText = (src: "shape.png", aspectRatio: shapeWidth/shapeHeight)
-        
-        let cText = UIImage(named: "color.png"),
-            colorHeight = cText!.size.height,
-            colorWidth = cText!.size.width
-        colorText = (src: "color.png", aspectRatio: colorWidth/colorHeight)
-        
-        setBackground()
-        
-        if (Int(arc4random_uniform(2)) == 1) {
-            backgroundImgIndex = 0
-            currentText = (src: colorText!.src, aspectRatio: colorText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
-        } else {
-            backgroundImgIndex = 1
-            currentText = (src: shapeText!.src, aspectRatio: shapeText!.aspectRatio, size: CGPointMake(0,0), pos: CGPointMake(0,0))
-        }
-        currentText!.size = CGPointMake(currentText!.aspectRatio * height * 1/10, height * 1/10)
-        currentText!.pos = CGPointMake(width/2 - currentText!.size.x/2, 10)
-    }
-    
     func setBackground() {
+        //run after setText since this function relies on currentText.src being set
         let bckgrndImgArray = ["SortAlotBackgroundBase.png", "SortAlotBackgroundBaseReverse.png", "SortAlotBackgroundGreen1.png", "SortAlotBackgroundRed1.png"]
         backgroundImg = bckgrndImgArray.map{setImageViews($0)}
+        if (theGamePanel!.currentText!.src == theGamePanel!.colorText!.src) {
+            backgroundImgIndex = 0
+        } else {
+            backgroundImgIndex = 1
+        }
     }
     
     func setImageViews(src: String) -> UIImageView {
@@ -120,7 +101,7 @@ class GameViewController: UIViewController {
         //try to find lighter way to display the view so the NSTimer can run more often
         var indexes: [Int] = []
         view.subviews.forEach({ $0.removeFromSuperview() })
-        addBackgroundImage(backgroundImg[backgroundImgIndex])//background image is too small for ipad pro
+        addBackgroundImage(backgroundImg[backgroundImgIndex])
         
         for (index, el) in updateArray.enumerate() {
             if (el.beginAt + el.duration <= milliseconds) {
@@ -138,25 +119,29 @@ class GameViewController: UIViewController {
         for shape in theShapes!.shapeSet {
             addTemplateImage(shape.pos.x, y: shape.pos.y, color: shape.color, imageView: shape.imgView)
         }
+        
         theGamePanel!.addPanel(view)
-        addImage(currentText!.src, x: currentText!.pos.x, y: currentText!.pos.y, width: currentText!.size.x, height: currentText!.size.y)
+        
+        let clockLabel = UILabel(frame: CGRectMake(theGamePanel!.currentText!.pos.x + theGamePanel!.currentText!.size.x - 45, 3, theGamePanel!.currentText!.size.x, 36))
+        
+        clockLabel.textColor = UIColor.blackColor()
+        clockLabel.font = UIFont(name:"HelveticaNeue;", size: 20)
+        clockLabel.font = clockLabel.font.fontWithSize(36)
+        clockLabel.text = "59"
+        view.addSubview(clockLabel)
+
+        let clockLabel1 = UILabel(frame: CGRectMake(theGamePanel!.currentText!.pos.x, 3, theGamePanel!.currentText!.size.x, 36))
+        clockLabel1.textColor = UIColor.blackColor()
+        clockLabel1.font = UIFont(name:"HelveticaNeue;", size: 20)
+        clockLabel1.font = clockLabel1.font.fontWithSize(36)
+        clockLabel1.text = "1025"
+        view.addSubview(clockLabel1)
+        
+        
+        addImage(theGamePanel!.currentText!.src, x: theGamePanel!.currentText!.pos.x, y: theGamePanel!.currentText!.pos.y, width: theGamePanel!.currentText!.size.x, height: theGamePanel!.currentText!.size.y)
+        
         addTemplateImage(theShapes!.currentShape!.pos.x, y: theShapes!.currentShape!.pos.y, color: theShapes!.currentShape!.color, imageView: theShapes!.currentShape!.imgView)
     }
-    
-    
-    func some(funct: (Int, Int) -> Bool, array: [Int], a: Int) -> Bool {
-        for el in array {
-            if (funct(el, a)) {
-                return true
-            }
-        }
-        return false
-    }
-    
-    func equiv(a: Int, b: Int) -> Bool {
-        return a == b
-    }
-    
     
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
         /* Called when a touch begins */
@@ -173,7 +158,7 @@ class GameViewController: UIViewController {
     }
     
     override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
-        if (currentText!.src == "shape.png") {
+        if (theGamePanel!.currentText!.src == "shape.png") {
             for shape in theShapes!.shapeSet {
                 if (shape.type == theShapes!.currentShape!.type && CGRectIntersectsRect(theShapes!.currentShape!.imgView.frame, shape.imgView.frame)) {
                     gameFlag = false
