@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AC0C79D01E4EF1AA00196449 /* SideMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0C79CF1E4EF1AA00196449 /* SideMenu.swift */; };
 		AC3C4B9E1E2D8BED00207562 /* extraFuncs.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3C4B9D1E2D8BED00207562 /* extraFuncs.swift */; };
 		AC3CD9231E200EB800800062 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3CD9221E200EB800800062 /* AppDelegate.swift */; };
 		AC3CD9271E200EB800800062 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3CD9261E200EB800800062 /* GameScene.swift */; };
@@ -30,6 +31,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AC0C79CF1E4EF1AA00196449 /* SideMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SideMenu.swift; sourceTree = "<group>"; };
 		AC3C4B9D1E2D8BED00207562 /* extraFuncs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = extraFuncs.swift; sourceTree = "<group>"; };
 		AC3CD91F1E200EB800800062 /* SortAlot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SortAlot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AC3CD9221E200EB800800062 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				AC3CD9281E200EB800800062 /* GameViewController.swift */,
 				ACA3D2971E2C9222002074BB /* Shapes.swift */,
 				ACA4B88C1E316DDA001C329D /* GamePanel.swift */,
+				AC0C79CF1E4EF1AA00196449 /* SideMenu.swift */,
 				AC3CD92A1E200EB800800062 /* Main.storyboard */,
 				AC3CD92D1E200EB800800062 /* Assets.xcassets */,
 				AC3CD92F1E200EB800800062 /* LaunchScreen.storyboard */,
@@ -216,6 +219,7 @@
 				AC3CD9271E200EB800800062 /* GameScene.swift in Sources */,
 				AC3CD9291E200EB800800062 /* GameViewController.swift in Sources */,
 				AC3CD9231E200EB800800062 /* AppDelegate.swift in Sources */,
+				AC0C79D01E4EF1AA00196449 /* SideMenu.swift in Sources */,
 				ACA4B88D1E316DDA001C329D /* GamePanel.swift in Sources */,
 				ACA3D2981E2C9222002074BB /* Shapes.swift in Sources */,
 			);
