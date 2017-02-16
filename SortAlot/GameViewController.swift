@@ -26,17 +26,24 @@ class GameViewController: UIViewController {
         wasTextSwitch: Bool = false,
         streak: Int = 0,
         longStreak: Int = 0,
-        textSwitchCount: Int = 0
+        textSwitchCount: Int = 0,
+        playView: UIView?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        playView = UIView(frame: CGRect(x: 1/10 * self.screenWidth, y: 0, width: 9/10 * self.screenWidth, height: self.screenHeight))
+        self.view.addSubview(playView!)
+ 
+        
+        
         self.height = self.screenHeight
         self.width = self.screenWidth * 9/10
         theShapes = Shapes(height: self.height, width: self.width)
         theShapes!.setShapes()
         theShapes!.newShape()
-        theGamePanel = GamePanel(height: self.height, width: self.width, view: view)
-        menu = SideMenu(height: self.height, width: 1/10 * self.screenWidth, x: 9/10 * self.screenWidth, y: 0, view: view)
+        theGamePanel = GamePanel(height: self.height, width: self.width, view: playView!)
+        menu = SideMenu(x: 0, y: 0, height: self.height, width: 1/10 * self.screenWidth, view: self.view!, playView: playView!)
     
         setBackground()
         //initialize timer
@@ -87,21 +94,21 @@ class GameViewController: UIViewController {
     
     func addTemplateImage(_ x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, imageView: UIImageView) {
         imageView.frame = CGRect(x: x, y: y, width: width, height: height)
-        view.addSubview(imageView)
+        playView!.addSubview(imageView)
     }
     
     func addImage(_ imageView: UIImageView) {
-        view.addSubview(imageView)
+        playView!.addSubview(imageView)
     }
     //difference between adding template and background is template images are the shapes that have a changing position and background images never change position
     func addBackgroundImage(_ imageView: UIImageView) {
-        view.addSubview(imageView)
+        playView!.addSubview(imageView)
     }
 
     func render() {
         //try to find lighter way to display the view so the NSTimer can run more often
         var indexes: [Int] = []
-        view.subviews.forEach({ $0.removeFromSuperview() })
+        playView!.subviews.forEach({ $0.removeFromSuperview() })
         addBackgroundImage(backgroundImg[backgroundImgIndex])
         
         for (index, el) in updateArray.enumerated() {
@@ -127,20 +134,20 @@ class GameViewController: UIViewController {
         
         addTemplateImage(theShapes!.currentShape!.pos.x, y: theShapes!.currentShape!.pos.y, width: theShapes!.currentShape!.size.width, height: theShapes!.currentShape!.size.height, imageView: theShapes!.currentShape!.imgView)
         
-        menu?.render()
+        //menu?.render()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let touch = touches.first {
-            startPos = touch.location(in: self.view)
+            startPos = touch.location(in: playView)
         }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         //if paused don't allow for movements
         if let touch = touches.first {
-            endPos = touch.location(in: self.view)
-            if (roundFlag) {
+            endPos = touch.location(in: playView)
+            if (roundFlag && !((menu?.paused)!)) {
                 theShapes!.currentShape!.pos = CGPoint(x: endPos.x - 3/10 * height/2, y: endPos.y - 3/10 * height/2)
             }
         }
@@ -246,7 +253,7 @@ class GameViewController: UIViewController {
             }
         }
         else {
-            addImage((theGamePanel!.currentText?.imgView)!)
+            menu?.render()
             
             time.difference = (now - self.time.date - time.milliseconds / 1000) * 1000
         }

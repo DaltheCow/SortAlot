@@ -15,14 +15,16 @@ class SideMenu {
     
     paused = false,
     
-    view: UIView?
+    view: UIView?,
+    playView: UIView?
     
-    init(height: CGFloat, width: CGFloat, x: CGFloat, y: CGFloat, view: UIView) {
+    init(x: CGFloat, y: CGFloat, height: CGFloat, width: CGFloat, view: UIView, playView: UIView) {
         self.height = height
         self.width = width
         self.menuHeight = height
         self.menuWidth = width
         self.view = view
+        self.playView = playView
         self.x = x
         self.y = y
         setUp()
@@ -33,28 +35,21 @@ class SideMenu {
         let img = UIImage(named: "square.png")
         menuIV = UIImageView(image: img)
         menuIV?.image? = (menuIV?.image!.withRenderingMode(.alwaysTemplate))!
-        menuIV?.tintColor = UIColor.white
+        menuIV?.tintColor = UIColor.black
         menuIV?.frame = CGRect(x: self.x, y: self.y, width: self.menuWidth, height: self.menuHeight)
-        print(self.x, self.y, self.menuWidth, self.menuHeight)
         
         //menu bar items
-        let img2 = UIImage(named: "menu-pause.png")
-        var height = img2!.size.height,
-            width = img2!.size.width,
-            aspectRatio = width/height
-        
-        pauseBtn = UIButton(frame: CGRect(x: x, y: y, width: menuWidth, height:menuWidth / aspectRatio))
-        pauseBtn?.setImage(img2 , for: UIControlState.normal)
+        pauseBtn = UIButton(frame: CGRect(x: x, y: y, width: menuWidth, height:menuWidth))
+        pauseBtn?.setImage(UIImage(named: "menu-pause.png")?.withRenderingMode(.alwaysTemplate), for: UIControlState.normal)
+        pauseBtn?.tintColor = UIColor.white
         pauseBtn?.addTarget(self, action: #selector(pauseAction), for: .touchUpInside)
         
-        let img3 = UIImage(named: "menu-play.png")
-        height = img3!.size.height
-        width = img3!.size.width
-        aspectRatio = width/height
-        
-        playBtn = UIButton(frame: CGRect(x: x, y: y, width: menuWidth, height:menuWidth / aspectRatio))
-        playBtn?.setImage(img3 , for: UIControlState.normal)
+        playBtn = UIButton(frame: CGRect(x: x, y: y, width: menuWidth, height:menuWidth))
+        playBtn?.setImage(UIImage(named: "menu-play.png")?.withRenderingMode(.alwaysTemplate), for: UIControlState.normal)
+        playBtn?.tintColor = UIColor.white
         playBtn?.addTarget(self, action: #selector(playAction), for: .touchUpInside)
+        
+        render()
     }
     
     @objc func pauseAction(sender: UIButton!) {
@@ -62,14 +57,16 @@ class SideMenu {
         paused = true
         let blurEffect = UIBlurEffect(style: UIBlurEffectStyle.light)
         let blurEffectView = UIVisualEffectView(effect: blurEffect)
-        blurEffectView.frame = (view?.bounds)!
+        blurEffectView.frame = (playView?.bounds)!
         blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view?.addSubview(blurEffectView)
+        playView?.addSubview(blurEffectView)
+        render()
     }
     
     @objc func playAction(sender: UIButton!) {
         //game is paused
         paused = false
+        render()
     }
     
     func render() {
