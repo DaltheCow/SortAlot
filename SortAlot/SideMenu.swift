@@ -14,6 +14,7 @@ class SideMenu {
     restartBtn: UIButton?,
     
     paused = false,
+    restart = false,
     
     view: UIView?,
     playView: UIView?
@@ -39,6 +40,7 @@ class SideMenu {
         menuIV?.frame = CGRect(x: self.x, y: self.y, width: self.menuWidth, height: self.menuHeight)
         
         //menu bar items
+        //make array to display these so it automatically does positioning
         pauseBtn = UIButton(frame: CGRect(x: x, y: y, width: menuWidth, height:menuWidth))
         pauseBtn?.setImage(UIImage(named: "menu-pause.png")?.withRenderingMode(.alwaysTemplate), for: UIControlState.normal)
         pauseBtn?.tintColor = UIColor.white
@@ -48,6 +50,11 @@ class SideMenu {
         playBtn?.setImage(UIImage(named: "menu-play.png")?.withRenderingMode(.alwaysTemplate), for: UIControlState.normal)
         playBtn?.tintColor = UIColor.white
         playBtn?.addTarget(self, action: #selector(playAction), for: .touchUpInside)
+        
+        restartBtn = UIButton(frame: CGRect(x: x, y: y + menuWidth * 1.1, width: menuWidth, height:menuWidth))
+        restartBtn?.setImage(UIImage(named: "menu-restart.png")?.withRenderingMode(.alwaysTemplate), for: UIControlState.normal)
+        restartBtn?.tintColor = UIColor.white
+        restartBtn?.addTarget(self, action: #selector(restartAction), for: .touchUpInside)
         
         render()
     }
@@ -69,6 +76,12 @@ class SideMenu {
         render()
     }
     
+    @objc func restartAction(sender: UIButton!) {
+        //game is paused
+        restart = true
+        render()
+    }
+    
     func render() {
         //draw menubar
         view?.addSubview(menuIV!)
@@ -79,6 +92,7 @@ class SideMenu {
             view?.addSubview(pauseBtn!)
         } else {
             view?.addSubview(playBtn!)
+            view?.addSubview(restartBtn!)
         }
         
     }

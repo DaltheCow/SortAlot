@@ -10,44 +10,39 @@ class GameViewController: UIViewController {
         startPos = CGPoint(x: 0,y: 0),
         endPos = CGPoint(x: 0,y: 0),
     
-        gameFlag = true,
-        roundFlag = true,
-        //time stuff can be a class so it can be easily reset
-        time = (date: Date().timeIntervalSince1970, milliseconds: 0.0, difference: 0.0, renderTimer: 25.0, timer: 0, timerLength: 45.0),
-        updateArray: [(type: UIImageView, duration: Double, beginAt: Double, pos: CGPoint, size: CGPoint, needsPos: Bool)] = [],
-    
         backgroundImg: [UIImageView] = [],
         backgroundImgIndex = 0,
         theShapes: Shapes?,
         theGamePanel: GamePanel?,
         menu: SideMenu?,
-    
-        score: Int = 0,
-        wasTextSwitch: Bool = false,
-        streak: Int = 0,
-        longStreak: Int = 0,
-        textSwitchCount: Int = 0,
+        game: GameTracking?,
+
         playView: UIView?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        playView = UIView(frame: CGRect(x: 1/10 * self.screenWidth, y: 0, width: 9/10 * self.screenWidth, height: self.screenHeight))
-        self.view.addSubview(playView!)
- 
-        
-        
         self.height = self.screenHeight
         self.width = self.screenWidth * 9/10
-        theShapes = Shapes(height: self.height, width: self.width)
-        theShapes!.setShapes()
-        theShapes!.newShape()
-        theGamePanel = GamePanel(height: self.height, width: self.width, view: playView!)
-        menu = SideMenu(x: 0, y: 0, height: self.height, width: 1/10 * self.screenWidth, view: self.view!, playView: playView!)
-    
+        
+        playView = UIView(frame: CGRect(x: 1/10 * self.screenWidth, y: 0, width: width, height: height))
+        self.view.addSubview(playView!)
+        
+        menu = SideMenu(x: 0, y: 0, height: height, width: 1/10 * screenWidth, view: self.view!, playView: playView!)
+        
+        theShapes = Shapes(height: height, width: width)
+        theGamePanel = GamePanel(height: height, width: width, view: playView!)
+        game = GameTracking()
+        newGame()
+        
         setBackground()
-        //initialize timer
-        time.timer = Int(time.timerLength)
+    }
+    
+    func newGame() {
+        theShapes!.setShapes() //set corner shapes
+        theShapes!.newShape() //set current shape
+        theGamePanel!.setText() //set current text
+        game?.newGame()
     }
     
     func newText() {
@@ -60,10 +55,10 @@ class GameViewController: UIViewController {
                 backgroundImgIndex = 0
                 theGamePanel!.currentText = theGamePanel!.colorText
             }
-            wasTextSwitch = true
-            textSwitchCount += 1
+            game?.wasTextSwitch = true
+            game?.textSwitchCount = (game?.textSwitchCount)! + 1
         } else {
-            wasTextSwitch = false
+            game?.wasTextSwitch = false
         }
     }
     
@@ -100,41 +95,36 @@ class GameViewController: UIViewController {
     func addImage(_ imageView: UIImageView) {
         playView!.addSubview(imageView)
     }
-    //difference between adding template and background is template images are the shapes that have a changing position and background images never change position
-    func addBackgroundImage(_ imageView: UIImageView) {
-        playView!.addSubview(imageView)
-    }
 
     func render() {
-        //try to find lighter way to display the view so the NSTimer can run more often
         var indexes: [Int] = []
         playView!.subviews.forEach({ $0.removeFromSuperview() })
-        addBackgroundImage(backgroundImg[backgroundImgIndex])
-        
-        for (index, el) in updateArray.enumerated() {
-            if (el.beginAt + el.duration <= time.milliseconds) {
+        addImage(backgroundImg[backgroundImgIndex]) //make its own UIView
+
+        for (index, el) in (game?.updateArray.enumerated())! {
+            if (el.beginAt + el.duration <= (game?.time.milliseconds)!) {
                 indexes.append(index)
-            } else if (el.beginAt <= time.milliseconds) {
+            } else if (el.beginAt <= (game?.time.milliseconds)!) {
                 if (el.needsPos) {
                 } else {
-                    addBackgroundImage(el.type)
+                    addImage(el.type)
                 }
             }
         }
+        
+        //remove in reverse to prevent errors
         for index in indexes.reversed() {
-            updateArray.remove(at: index)
+            game?.updateArray.remove(at: index)
         }
         for shape in theShapes!.shapeSet {
             addTemplateImage(shape.pos.x, y: shape.pos.y, width: shape.size.width, height: shape.size.height, imageView: shape.imgView)
         }
         
-        theGamePanel!.addPanel(self.score, time: self.time.timer)
+        theGamePanel!.addPanel((game?.score)!, time: (game?.time.timer)!)
         
         addImage((theGamePanel!.currentText?.imgView)!)
         
         addTemplateImage(theShapes!.currentShape!.pos.x, y: theShapes!.currentShape!.pos.y, width: theShapes!.currentShape!.size.width, height: theShapes!.currentShape!.size.height, imageView: theShapes!.currentShape!.imgView)
-        
-        //menu?.render()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -147,7 +137,7 @@ class GameViewController: UIViewController {
         //if paused don't allow for movements
         if let touch = touches.first {
             endPos = touch.location(in: playView)
-            if (roundFlag && !((menu?.paused)!)) {
+            if ((game?.roundFlag)! && !((menu?.paused)!)) {
                 theShapes!.currentShape!.pos = CGPoint(x: endPos.x - 3/10 * height/2, y: endPos.y - 3/10 * height/2)
             }
         }
@@ -157,31 +147,31 @@ class GameViewController: UIViewController {
         if (theGamePanel!.currentText!.src == "shape.png") {
             for shape in theShapes!.shapeSet {
                 if (shape.type == theShapes!.currentShape!.type && theShapes!.currentShape!.imgView.frame.intersects(shape.imgView.frame)) {
-                    gameFlag = false
+                    game?.gameFlag = false
                 }
             }
         } else {
             for shape in theShapes!.shapeSet {
                 if (shape.color == theShapes!.currentShape!.color && theShapes!.currentShape!.imgView.frame.intersects(shape.imgView.frame)) {
-                    gameFlag = false
+                    game?.gameFlag = false
                 }
             }
         }
         
-        if (!gameFlag) {
+        if (!(game?.gameFlag)!) {
             //run code that follows a correct swipe
             //scoring before newText
             scoring(isCorrect: true)
             theShapes!.newShape()
             newText()
-            gameFlag = true
-            updateArray.append((type: backgroundImg[2], duration: 150, beginAt: time.milliseconds, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
+            game?.gameFlag = true
+            game?.updateArray.append((type: backgroundImg[2], duration: 150, beginAt: (game?.time.milliseconds)!, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
         } else {
             for shape in theShapes!.shapeSet {
                 if (theShapes!.currentShape!.imgView.frame.intersects(shape.imgView.frame)) {
-                    updateArray.append((type: backgroundImg[3], duration: 200, beginAt: time.milliseconds, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
-                    updateArray.append((type: backgroundImg[3], duration: 200, beginAt: time.milliseconds + 300, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
-                    updateArray.append((type: backgroundImg[3], duration: 200, beginAt: time.milliseconds + 600, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
+                    game?.updateArray.append((type: backgroundImg[3], duration: 200, beginAt: (game?.time.milliseconds)!, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
+                    game?.updateArray.append((type: backgroundImg[3], duration: 200, beginAt: (game?.time.milliseconds)! + 300, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
+                    game?.updateArray.append((type: backgroundImg[3], duration: 200, beginAt: (game?.time.milliseconds)! + 600, pos: CGPoint(x: 0,y: 0), size: CGPoint(x: 0,y: 0), needsPos: false))
                     scoring(isCorrect: false)
                     theShapes!.newShape()
                     newText()
@@ -195,31 +185,31 @@ class GameViewController: UIViewController {
     //this should be a class so it can be easily reset
     func scoring(isCorrect: Bool) {
         if (isCorrect) {
-            var streakScore = streak,
+            var streakScore = (game?.streak)!,
                 textScore = 0,
                 streakTens = 0
-            if (streak > 0 && streak % 10 == 0) {
+            if ((game?.streak)! > 0 && (game?.streak)! % 10 == 0) {
                 streakTens = 10
             }
             if (streakScore > 10) {
                 streakScore = 10
             }
-            if (wasTextSwitch) {
+            if (game?.wasTextSwitch)! {
                 textScore = 10
             }
-            score += streakScore + textScore + streakTens + 10
-            streak += 1
-            if (streak > longStreak) {
-                longStreak = streak
+            game?.score = (game?.score)! + streakScore + textScore + streakTens + 10
+            game?.streak = (game?.streak)! + 1
+            if ((game?.streak)! > (game?.longStreak)!) {
+                game?.longStreak = (game?.streak)!
             }
         } else {
-            streak = 0
-            score -= 5
+            game?.streak = 0
+            game?.score = (game?.score)! - 5
         }
     }
     //scoring for after a round
     func postScoring() {
-        score += longStreak * 2 + textSwitchCount * 5
+        game?.score = (game?.score)! + (game?.longStreak)! * 2 + (game?.textSwitchCount)! * 5
     }
     
     override func awakeFromNib() {
@@ -230,32 +220,48 @@ class GameViewController: UIViewController {
             userInfo: nil,
             repeats: true)
     }
-    //var last: Double = 0
+    
+    /*var last: Double = 0
+     func fps() {
+        print((game?.time.milliseconds)! - last)
+        last = (game?.time.milliseconds)!
+    }*/
+    
     func update() {
-        //3-4 milliseconds to run the code
         let now = Date().timeIntervalSince1970
         
+        //if the game isn't paused
         if (!(menu?.paused)!) {
-            time.milliseconds = (now - self.time.date - time.difference / 1000) * 1000
-            if (time.milliseconds > time.renderTimer) {
-                //in game rendering
+            game?.time.milliseconds = (now - (game?.time.date)! - (game?.time.difference)! / 1000) * 1000
+            
+            //render game view when necessary
+            if ((game?.time.milliseconds)! > (game?.time.renderTimer)!) {
                 render()
-                //print(time.milliseconds - last)
-                //last = time.milliseconds
-                time.renderTimer = time.milliseconds + 25
-                if (time.timer < 1 && time.milliseconds / 1000 > time.timerLength && roundFlag) {
-                    roundFlag = false
+                
+                //set next render time
+                game?.time.renderTimer = (game?.time.milliseconds)! + 25
+                
+                //if timer is up end round
+                if ((game?.time.timer)! < 1 && (game?.time.milliseconds)! / 1000 > (game?.time.timerLength)! && (game?.roundFlag)!) {
+                    game?.roundFlag = false
                     postScoring()
                 }
             }
-            if (roundFlag) {
-                time.timer = Int(time.timerLength) - Int(time.milliseconds/1000)
+            //update timer
+            if (game?.roundFlag)! {
+                game?.time.timer = Int((game?.time.timerLength)!) - Int((game?.time.milliseconds)!/1000)
             }
         }
+        //if the game is paused
         else {
+            if (menu?.restart)! {
+                newGame()
+                menu?.restart = false
+            }
+            
             menu?.render()
             
-            time.difference = (now - self.time.date - time.milliseconds / 1000) * 1000
+            game?.time.difference = (now - (game?.time.date)! - (game?.time.milliseconds)! / 1000) * 1000
         }
     }
     

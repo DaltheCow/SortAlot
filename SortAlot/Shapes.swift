@@ -13,9 +13,10 @@ class Shapes {
     }
     
     func setShapes() {
+        shapeSet = []
         let shapeSrc = ["circle.png", "square.png", "triangle.png", "diamond.png", "club.png", "spade.png", "cloud.png", "pentagon.png"],
         //orange and red too similar, get a darker green, maybe a purple
-        colors = [UIColor.blue, UIColor.green, UIColor.red, UIColor.black, UIColor.yellow, UIColor.orange]
+        colors = [UIColor.blue, UIColor.green, UIColor.red, UIColor.purple, UIColor.yellow, UIColor.orange]
 
         var shapeSetInts: [Int] = [],
             colorSetInts: [Int] = []

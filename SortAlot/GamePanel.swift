@@ -1,4 +1,5 @@
 //note gamePanel has its own rendering function
+//convert gamePanel into its own view
 
 import UIKit
 
@@ -16,17 +17,17 @@ class GamePanel {
     colorText: (src: String, imgView: UIImageView)? = nil,
     shapeText: (src: String, imgView: UIImageView)? = nil,
     currentText: (src: String, imgView: UIImageView)? = nil,
+    scoreLabel: UILabel?,
+    clockLabel: UILabel?,
     view: UIView?
     
     init(height: CGFloat, width: CGFloat, view: UIView) {
         self.height = height
         self.width = width
         self.view = view
-        setPanelPosition()
-        setText()
+        panelSetup()
     }
-    //use panel x,y and height,width to make a view for everything to go inside, when things are drawn they are drawn at panel x, y plus their own x, y within the panel
-    func setPanelPosition() {
+    func panelSetup() {
         panelHeight = height/4.2
         panelWidth = width/3
         x = width/2 - panelWidth/2
@@ -42,6 +43,16 @@ class GamePanel {
         borderIV!.image? = (borderIV!.image?.withRenderingMode(.alwaysTemplate))!
         borderIV!.tintColor = UIColor.white
         borderIV!.frame=CGRect(x: x, y: y, width: panelWidth, height: panelHeight)
+        
+        scoreLabel = UILabel(frame: CGRect(x: x, y: y, width: panelWidth / 1.6, height: panelHeight / 2.2))
+        scoreLabel?.textColor = UIColor.black
+        scoreLabel?.textAlignment = NSTextAlignment.center
+        scoreLabel?.font = UIFont(name:"HelveticaNeue", size: panelHeight / 2.2)
+        
+        clockLabel = UILabel(frame: CGRect(x: x + panelWidth / 1.8 + panelWidth / 15, y: y, width: panelWidth / 2.75, height: panelHeight / 2.3))
+        clockLabel?.textColor = UIColor.black
+        clockLabel?.textAlignment = NSTextAlignment.center
+        clockLabel?.font = UIFont(name:"HelveticaNeue", size: panelHeight / 2.2)
     }
     
     func addPanel(_ score: Int, time: Int) {
@@ -49,8 +60,6 @@ class GamePanel {
         view?.addSubview(borderIV!)
         addScore(score)
         addTime(time)
-        //add text, score, game clock
-        //text change
     }
     
     func setText() {
@@ -77,23 +86,13 @@ class GamePanel {
     }
     
     func addScore(_ score: Int) {
-        let scoreLabel = UILabel(frame: CGRect(x: x, y: y, width: panelWidth / 1.6, height: panelHeight / 2.2))
-        scoreLabel.textColor = UIColor.black
-        scoreLabel.textAlignment = NSTextAlignment.center
-        scoreLabel.font = UIFont(name:"HelveticaNeue", size: panelHeight / 2.2)
-        //scoreLabel.font = scoreLabel.font.withSize(panelHeight / 2.4)
-        scoreLabel.text = String(score)
-        view?.addSubview(scoreLabel)
+        scoreLabel?.text = String(score)
+        view?.addSubview(scoreLabel!)
     }
     
     func addTime(_ time: Int) {
-        let clockLabel = UILabel(frame: CGRect(x: x + panelWidth / 1.8 + panelWidth / 15, y: y, width: panelWidth / 2.75, height: panelHeight / 2.3))
-        clockLabel.textColor = UIColor.black
-        clockLabel.textAlignment = NSTextAlignment.center
-        clockLabel.font = UIFont(name:"HelveticaNeue", size: panelHeight / 2.2)
-        //clockLabel.font = clockLabel.font.withSize(panelHeight / 2.4)
-        clockLabel.text = String(time)
-        view?.addSubview(clockLabel)
+        clockLabel?.text = String(time)
+        view?.addSubview(clockLabel!)
 
     }
     
